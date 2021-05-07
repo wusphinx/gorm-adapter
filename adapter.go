@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"runtime"
 	"strings"
+	"time"
 
 	"github.com/casbin/casbin/v2/model"
 	"github.com/casbin/casbin/v2/persist"
@@ -40,15 +41,29 @@ const (
 
 type customTableKey struct{}
 
+func (cr *CasbinRule) BeforeCreate(tx *gorm.DB) (err error) {
+	cr.CreatedAt = time.Now().UnixNano() / 1e6
+	cr.UpdatedAt = time.Now().UnixNano() / 1e6
+	return
+}
+
+func (cr *CasbinRule) BeforeUpdate(tx *gorm.DB) (err error) {
+	cr.UpdatedAt = time.Now().UnixNano() / 1e6
+	return
+}
+
 type CasbinRule struct {
-	ID    uint   `gorm:"primaryKey;autoIncrement"`
-	Ptype string `gorm:"size:100"`
-	V0    string `gorm:"size:100"`
-	V1    string `gorm:"size:100"`
-	V2    string `gorm:"size:100"`
-	V3    string `gorm:"size:100"`
-	V4    string `gorm:"size:100"`
-	V5    string `gorm:"size:100"`
+	ID        int64 `gorm:"column:id;primaryKey;autoIncrement;comment:'主键'" json:"id"`
+	CreatedAt int64 `gorm:"not null;autoCreateTime:milli;column:gmt_create;comment:'创建时间';default:0" json:"createdAt"`
+	UpdatedAt int64 `gorm:"not null;autoUpdateTime:milli;column:gmt_modified;comment:'更新时间';default:0" json:"updatedAt"`
+
+	Ptype string `gorm:"not null;size:100;comment:'类型 eg:p, g';default:''"`
+	V0    string `gorm:"not null;size:100;comment:'v0';default:''"`
+	V1    string `gorm:"not null;size:100;comment:'v1';default:''"`
+	V2    string `gorm:"not null;size:100;comment:'v2';default:''"`
+	V3    string `gorm:"not null;size:100;comment:'v3';default:''"`
+	V4    string `gorm:"not null;size:100;comment:'v4';default:''"`
+	V5    string `gorm:"not null;size:100;comment:'v5';default:''"`
 }
 
 func (CasbinRule) TableName() string {
@@ -322,7 +337,7 @@ func (a *Adapter) createTable() error {
 	}
 
 	tableName := a.getFullTableName()
-	index := "idx_" + tableName
+	index := "unq_" + tableName
 	hasIndex := a.db.Migrator().HasIndex(t, index)
 	if !hasIndex {
 		if err := a.db.Exec(fmt.Sprintf("CREATE UNIQUE INDEX %s ON %s (ptype,v0,v1,v2,v3,v4,v5)", index, tableName)).Error; err != nil {
