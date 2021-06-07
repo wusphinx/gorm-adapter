@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"runtime"
 	"strings"
 	"time"
@@ -231,6 +232,18 @@ func openDBConnection(driverName, dataSourceName string) (*gorm.DB, error) {
 		db, err = gorm.Open(postgres.Open(dataSourceName), &gorm.Config{})
 	} else if driverName == "mysql" {
 		db, err = gorm.Open(mysql.Open(dataSourceName), &gorm.Config{})
+		if err != nil {
+			return nil, err
+		}
+		sqlDB, err := db.DB()
+		if err != nil {
+			log.Fatalf("get db err: %v", err)
+			return nil, err
+		}
+
+		sqlDB.SetMaxIdleConns(10)
+		sqlDB.SetMaxOpenConns(30)
+
 	} else if driverName == "sqlserver" {
 		db, err = gorm.Open(sqlserver.Open(dataSourceName), &gorm.Config{})
 		//} else if driverName == "sqlite3" {
