@@ -345,9 +345,10 @@ func (a *Adapter) createTable() error {
 	}
 
 	t = a.getTableInstance()
-	if err := a.db.AutoMigrate(t); err != nil {
-		return err
-	}
+	// TODO disable migrate with a better way
+	// if err := a.db.AutoMigrate(t); err != nil {
+	// 	return err
+	// }
 
 	tableName := a.getFullTableName()
 	index := "unq_" + tableName
